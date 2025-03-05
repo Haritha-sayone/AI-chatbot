@@ -1,7 +1,9 @@
 /* Center the chat container */
 .chat-container {
-  width: 800px;
-  height: 700px; /* Increase height */
+  width: 90%;
+  max-width: 800px;
+  height: 90vh;
+  max-height: 700px;
   border: 2px solid #ccc;
   border-radius: 10px;
   display: flex;
