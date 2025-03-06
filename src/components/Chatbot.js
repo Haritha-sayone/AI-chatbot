@@ -28,24 +28,29 @@ function Chatbot() {
     const handleChat = async () => {
         if (!query.trim()) return;
         const userMessage = { text: query, sender: "user" };
+        setMessages((prevMessages) => [...prevMessages, userMessage]);
         setIsLoading(true);
         try {
-            const generatedContent = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.REACT_APP_GEMINI_SECRET_KEY}`, {
+            // Construct chat history in the format expected by Gemini 1.5
+            const chatHistory = messages.map(msg => ({
+                role: msg.sender === "bot" ? "model" : "user",
+                parts: [{ text: msg.text }]
+            }));
+
+            // Include the latest user query
+            const requestBody = {
+                contents: [...chatHistory, { role: "user", parts: [{ text: query }] }]
+            };
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.REACT_APP_GEMINI_SECRET_KEY}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            parts: [{ "text": query }]
-                        }
-                    ]
-                })
+                body: JSON.stringify(requestBody)
             });
-            const transformedResponse = await generatedContent.json();
-            const botReply = transformedResponse?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't process that.";
-            console.log(botReply);
+            const data = await response.json();
+            const botReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't process that.";
+            // console.log(botReply);
             const botMessage = { text: botReply, sender: "bot" };
-            setMessages([...messages, userMessage, botMessage]);
+            setMessages((prevMessages) => [...prevMessages, botMessage]);
             setQuery("");
             // console.log("messages=", messages);
         } catch (error) {
